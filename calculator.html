@@ -1,0 +1,271 @@
+<html>
+    <head>
+        <title>Calculator</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Spicy+Rice&display=swap" rel="stylesheet">
+        <style>
+            .button{
+                width: 190px;
+                height: 80px;
+                background-color: #6969b3;
+                border: 0px;
+                color: #ffffffca;
+                border-radius: 6px;
+                box-shadow: 3px 5px black;
+                padding: 5px;
+                font-size: 35px;
+                font-family: "Spicy Rice", serif;
+            }
+            button:hover{
+                background-color: #98C1D9;
+            }
+            button:active{
+                box-shadow: none;
+            }
+            .flexContainer {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: space-evenly;
+                align-items: baseline;
+                width: 800px;
+                row-gap: 16px;
+                outline: solid rgb(174, 185, 238);
+                border-radius: 6px;
+
+            }
+            .displayContainer {
+                display: flex;
+                justify-content: flex-end;
+                width: 800px;
+                font-size: 40px;
+                outline: solid rgb(174, 185, 238);
+                border-radius: 6px;
+            }
+            #display{
+                margin-right: 20px;
+                color: rgb(204, 209, 245);
+            }
+            body{
+                background-image: linear-gradient(to bottom right, rgb(120, 120, 217), rgb(0, 13, 128));
+                font-family: "Spicy Rice", serif;
+            }
+            h1{
+                color: rgb(204, 209, 245);
+                font-size: 50;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Cacalator</h1>
+        <div class="displayContainer">
+            <span id="display"></span>
+        </div>
+        <div class="flexContainer">
+            <button class="button number">7</button>
+            <button class="button number">8</button>
+            <button class="button number">9</button>
+            <button class="button operator">/</button>
+            
+            <button class="button number">4</button>    
+            <button class="button number">5</button>
+            <button class="button number">6</button>
+            <button class="button operator">*</button>
+            
+            <button class="button number">1</button>
+            <button class="button number">2</button>
+            <button class="button number">3</button>
+            <button class="button operator">-</button>
+            
+            <button class="button number">0</button>
+            <button class="button decimal">.</button>
+            <button class="button equals">=</button>
+            <button class="button operator">+</button>
+            
+            
+            <button class="button parenthesis">(</button>
+            <button class="button parenthesis">)</button>
+            <button class="button clear">clear</button>
+        </div>
+        <script> 
+            const numbersArr = Array.from(document.getElementsByClassName("number"));
+            const operatorsArr = Array.from(document.getElementsByClassName("operator"));
+            const parenthesisArr = Array.from(document.getElementsByClassName("parenthesis"));
+            const equalsButton = document.getElementsByClassName("equals")[0];
+            const clearButton = document.getElementsByClassName("clear")[0];
+            const opOrder = { "+": 1, "-": 1, "*": 2, "/": 2 };
+            
+
+            const data = {
+                displayString: "0",
+                appendStringNum: (newChar) => {
+                    if(newChar === "."){
+
+                    }
+                    const numberStrs = "0123456789".split("");
+                    if(newChar in numberStrs){
+                        if(data.displayString === "0"){
+                            data.displayString = "";
+                        }
+                        data.displayString += newChar;
+                    }
+                    data.updateDisplay();
+                },
+                appendStringOperator: (newChar) => {
+                    const numberStrs = "0123456789".split("");
+                    if(data.displayString.slice(-1)[0] in numberStrs){
+                        data.displayString += newChar;
+                    }
+                    data.updateDisplay();
+                },
+                appendStringParenthesis: (newChar) => {
+                    if (newChar === ")") {
+                        if (data.displayString.split("(").length <= data.displayString.split(")").length) {
+                            //if there are not enough open parenthesis to add a closing parenthesis terminate early
+                            return;
+                        }
+                        if (operatorsArr.map((operator) => operator.innerText).includes(data.displayString[data.displayString.length - 1])) {
+                            //early termination for adding parenthesis after operator
+                            return;
+                        }
+                    }
+                    if (data.displayString === "0") {
+                        data.displayString = "";
+                        data.displayString += newChar;
+                        return;
+                    }
+                    data.displayString += newChar;
+
+                    data.updateDisplay();
+                },
+                updateDisplay: () => {
+                    const display = document.getElementById("display");
+                    display.innerText = data.displayString;
+                },
+                calculateAnswer: () => {
+                    const postfix = infixToPostfix(data.displayString);
+                    const result = evaluatePostfix(postfix);
+                    
+                    data.displayString = result.toString();
+                    data.updateDisplay();
+                },
+            };
+            
+            const display = document.getElementById("display")
+            display.innerText = data.displayString;
+            
+            numbersArr.map((elem, i) => {
+                elem.addEventListener("click", (evt) => {
+                    data.appendStringNum(elem.innerText);
+                });
+            });
+
+            operatorsArr.map((elem, i) => {
+                elem.addEventListener("click", (evt) => {
+                    data.appendStringOperator(elem.innerText);
+                });
+            });
+
+            parenthesisArr.map((elem, i) => {
+                elem.addEventListener("click", (evt) => {
+                    data.appendStringParenthesis(elem.innerText);
+                });
+            });
+            equalsButton.addEventListener("click", (evt) => {
+                data.calculateAnswer();
+            });
+            clearButton.addEventListener("click", (evt) => {
+                data.displayString = 0;
+                data.updateDisplay();
+            })
+
+            // Standalone compute function
+            const compute = (operator, a, b) => {
+                switch (operator) {
+                    case "+": return a + b;
+                    case "-": return a - b;
+                    case "*": return a * b;
+                    case "/": return a / b;
+                    default: throw new Error(`Unknown operator: ${operator}`);
+                }
+            };
+
+            // Convert infix to postfix
+            const infixToPostfix = (expression) => {
+                const opOrder = { "+": 1, "-": 1, "*": 2, "/": 2 }; // Operator precedence
+                const stack = [];
+                const result = [];
+                let numBuffer = ""; // Buffer to store multi-digit numbers
+
+                for (let i = 0; i < expression.length; i++) {
+                    const input = expression[i];
+
+                    if (/\d/.test(input)) { // If input is a digit
+                        numBuffer += input; // Add to the number buffer
+                    } else {
+                    if (numBuffer !== "") { // If there's a number in the buffer
+                        result.push(numBuffer); // Push the complete number to the result
+                        numBuffer = ""; // Reset the buffer
+                    }
+                        if (input === "(") { // If input is an opening parenthesis
+                            stack.push(input);
+                    } else if (input === ")") { // If input is a closing parenthesis
+                        while (stack.length > 0 && stack[stack.length - 1] !== "(") {
+                                esult.push(stack.pop()); // Pop operators to the result
+                        }
+                        stack.pop(); // Pop the '('
+                    } else if (input in opOrder) { // If input is an operator
+                        while (
+                            stack.length > 0 &&
+                            stack[stack.length - 1] !== "(" &&
+                            opOrder[input] <= opOrder[stack[stack.length - 1]]
+                        ) {
+                            result.push(stack.pop()); // Pop higher-precedence operators
+                        }
+                        stack.push(input); // Push the current operator onto the stack
+                    }
+                }
+            }
+
+            if (numBuffer !== "") { // Push any remaining number in the buffer
+                result.push(numBuffer);
+            }
+
+            while (stack.length > 0) { // Pop any remaining operators
+                result.push(stack.pop());
+            }
+
+            return result; // Return the postfix expression
+        };
+
+        // Evaluate postfix expression
+        const evaluatePostfix = (postfix) => {
+        const stack = [];
+
+        for (let input of postfix) {
+            if (/\d+/.test(input)) { // If input is a number
+                stack.push(parseInt(input)); // Push the number onto the stack
+            } else if (input in { "+": 1, "-": 1, "*": 1, "/": 1 }) { // If input is an operator
+                if (stack.length < 2) {
+                    throw new Error("Invalid expression: Not enough operands for operator");
+                }
+                const operand1 = stack.pop(); // Pop the first operand
+                const operand2 = stack.pop(); // Pop the second operand
+                const result = compute(input, operand2, operand1); // Perform the operation
+                stack.push(result); // Push the result back onto the stack
+            } else {
+                throw new Error(`Invalid token in expression: ${input}`);
+            }
+        }
+
+        if (stack.length !== 1) {
+            throw new Error("Invalid expression: Too many operands");
+        }
+
+        return stack.pop(); // Return the final result
+        };
+
+        </script>
+    </body>
+</html>
